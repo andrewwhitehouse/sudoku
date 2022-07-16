@@ -1,6 +1,7 @@
 package com.oojamaflip;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Grid {
@@ -73,7 +74,7 @@ public class Grid {
         return false;
     }
 
-    public Grid populate(int boxIndex, int value) {
+    public List<Grid> populate(int boxIndex, int value) {
         int topLeftColumnIndex = (boxIndex % horizontalBoxes) * boxSize;
         int topLeftRowIndex = (boxIndex / verticalBoxes) * boxSize;
         List<Position> availablePositions = new ArrayList();
@@ -89,15 +90,31 @@ public class Grid {
                 }
             }
         }
-        if (availablePositions.isEmpty()) {
-            throw new IllegalStateException(
-                    String.format("No position available for value %d in boxIndex %d grid %s",
-                            value, boxIndex, toString()));
+        List<Grid> grids = new ArrayList<>();
+        availablePositions.forEach(position -> {
+            Grid newGrid = copy(this);
+            newGrid.setValue(position.getRow(), position.getColumn(), value);
+            grids.add(newGrid);
+        });
+        return grids;
+    }
+
+    public static Grid generate() {
+        Grid grid = new Grid(3, 3, 3);
+        for(int boxIndex=0; boxIndex < grid.horizontalBoxes*grid.verticalBoxes; boxIndex++) {
+            grid = grid.populate(boxIndex, 1).get(0);
         }
-        Grid newGrid = copy(this);
-        Position firstAvailable = availablePositions.get(0);
-        newGrid.setValue(firstAvailable.getRow(), firstAvailable.getColumn(), value);
-        return newGrid;
+        List<Grid> grids = Arrays.asList(grid);
+        for(int value=2; value <= 9; value++) {
+            List<Grid> newList = new ArrayList<>();
+            for(Grid g: grids) {
+                for(int boxIndex=1; boxIndex < grid.verticalBoxes*grid.horizontalBoxes; boxIndex++) {
+                    newList.addAll(g.populate(boxIndex, value));
+                }
+            }
+            grids = newList;
+        }
+        return grids.get(0);
     }
 
     static class Position {
